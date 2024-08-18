@@ -215,8 +215,8 @@ boot_file = path.join(getcwd(), "boot.sh")
 with open(path.join(getcwd(), "boot_config.txt"), "r") as file:
     line = file.read()
 
-    for placeholder, path in configuration.items():
-        line =  re.sub(placeholder, path, line)
+    for placeholder, dir in configuration.items():
+        line =  re.sub(placeholder, dir, line)
     open(boot_file, "w").write(line)
 
 
