@@ -1,6 +1,6 @@
-[pi-share]
-Comment = Pi WIFI USB shared folder
-Path = WIFIFILE
+[HOSTNAME]
+Comment = HOSTNAME shared folder
+Path = WFILE
 Browseable = yes
 Writeable = yes
 only guest = no

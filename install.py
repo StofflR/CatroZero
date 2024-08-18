@@ -56,14 +56,22 @@ print(f"DATA_FILE: {DATA_FILE}")
 print(f"USB_SIZE: {USB_SIZE}")
 print(f"VENV: {VENV_PATH}")#
 
-replacement_dict = {
-    'PWD': re.sub(r'[\/&]', r'\\\g<0>', getcwd()),
-    'DEL': str(DELAY),
-    'WFILE': re.sub(r'[\/&]', r'\\\g<0>', WIFI_PATH),
-    'BLFILE': re.sub(r'[\/&]', r'\\\g<0>', BLUETOOTH_PATH),
-    'MNTFILE': re.sub(r'[\/&]', r'\\\g<0>', MOUNT_FILE),
-    'DATAFILE': re.sub(r'[\/&]', r'\\\g<0>', DATA_FILE),
-    'HOSTNAME': HOSTNAME
+PWD_KEY = "PWD"
+DEL_KEY = "DEL"
+WFILE_KEY = "WFILE"
+BLFILE_KEY = "BLFILE"
+MNTFILE_KEY = "MNTFILE"
+DATAFILE_KEY = "DATAFILE"
+HOSTNAME_KEY = "HOSTNAME"
+
+configuration = {
+    PWD_KEY: re.sub(r'[\/&]', r'\\\g<0>', getcwd()),
+    DEL_KEY: str(DELAY),
+    WFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', WIFI_PATH),
+    BLFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', BLUETOOTH_PATH),
+    MNTFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', MOUNT_FILE),
+    DATAFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', DATA_FILE),
+    HOSTNAME_KEY: HOSTNAME
 }
 
 if geteuid() != 0:
@@ -163,80 +171,61 @@ run_command([["mount", DATA_FILE, MOUNT_FILE]], "Mounting USB Storage to shared 
 
 
 print("Creating network shared folder")
-makedirs(WIFI_PATH, mode=0o2777)
+makedirs(WIFI_PATH, mode=0o2777, exist_ok=True)
+
+def create_backup(file):
+    backup = f"{file}.bak"
+    if not path.exists(backup):
+        shutil.copy(file, backup)
+        return True
+    return False
+
+def restore_backup(file):
+    backup = f"{file}.bak"
+    if path.exists(backup):
+        shutil.copy(backup, file)
 
 samba_config = "/etc/samba/smb.conf"
-sample_config = "/etc/samba/smb.conf.sample"
+if not create_backup(samba_config):
+    restore_backup(samba_config)
 
-if not path.exists(sample_config):
-    shutil.copy(samba_config, sample_config)
-
-
-if "pi-share" in open(samba_config).read():
-    print("Already created samba config - falling back to default")
-    shutil.rmtree(samba_config)
-    shutil.copy(sample_config, samba_config)
-
-with open("samba_config.txt", "r") as file:
-    line = file.read()
-    escaped_path = WIFI_PATH.replace("/", "\\/")
-    line = line.replace("WIFIFILE", escaped_path)
-    with open(samba_config, "a") as config_file:
-        config_file.write(line)
+if str.lower(configuration[HOSTNAME_KEY]) not in open(samba_config).read():
+    with open("samba_config.txt", "r") as file:
+        line = file.read().replace(WFILE_KEY, configuration[WFILE_KEY])
+        line = line.replace(HOSTNAME_KEY, str.lower(configuration[HOSTNAME_KEY]))
+        with open(samba_config, "a") as config_file:
+            config_file.write(line)
 
 print("Setting Bluetooth device name")
 with open(path.join(getcwd(), 'main.conf'), 'r') as file:
-    file.write(file.read().replace('HOSTNAME', HOSTNAME))
+    file.write(file.read().replace(HOSTNAME_KEY, configuration[HOSTNAME_KEY]))
 
 shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
 
-# Check if ' -C' is already present in "/etc/systemd/system/dbus-org.bluez.service"
-with open("/etc/systemd/system/dbus-org.bluez.service", "r") as file:
-    if ' -C' in file.read():
-        print("Already in compat mode")
-    else:
-        print("Set bluetoothd to compat mode")
-        with open("/etc/systemd/system/dbus-org.bluez.service", "r+") as file:
-            lines = file.readlines()
-            execnum = next(i for i, line in enumerate(lines) if "ExecStart" in line)
-            lines[execnum] = lines[execnum].strip() + " -C\n"
-            file.seek(0)
-            file.writelines(lines)
+def set_compat(file, target):
+    with open(file, "r") as file:
+        if ' -C' in file.read():
+            print("Already in compat mode")
+        else:
+            print(f"Set {target} to compat mode")
+            with open(file, "r+") as file:
+                lines = file.readlines()
+                execnum = next(i for i, line in enumerate(lines) if "ExecStart" in line)
+                lines[execnum] = lines[execnum].strip() + " -C\n"
+                file.seek(0)
+                file.writelines(lines)
 
-# Check if ' -C' is already present in "/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
-with open("/etc/systemd/system/bluetooth.target.wants/bluetooth.service", "r+") as file:
-    if ' -C' in file.read():
-        print("Already in compat mode")
-    else:
-        print("Set bluetoothd to compat mode")
-        lines = file.readlines()
-        execnum = next(i for i, line in enumerate(lines) if "ExecStart" in line)
-        lines[execnum] = lines[execnum].strip() + " -C\n"
-        file.seek(0)
-        file.writelines(lines)
-
-bluetooth_service_file = "/lib/systemd/system/bluetooth.service"
-with open(bluetooth_service_file, "r") as file:
-    if ' -C' in file.read():
-        print("Already in compat mode")
-    else:
-        with open(bluetooth_service_file, "r+") as file:
-            print("Set bluetoothd to compat mode")
-            lines = file.readlines()
-            execnum = next(i for i, line in enumerate(lines) if "ExecStart" in line)
-            lines[execnum] = lines[execnum].strip() + " -C\n"
-            file.seek(0)
-            file.writelines(lines)
-
-
-# Escape special characters in the current working directory path
+# Check if ' -C' is already present
+set_compat("/etc/systemd/system/dbus-org.bluez.service", "bluez")
+set_compat("/etc/systemd/system/bluetooth.target.wants/bluetooth.service", "target.wants.bluetooth")
+set_compat("/lib/systemd/system/bluetooth.service", "system/bluetooth")
 
 
 # Read the contents of the boot_config.txt file
 with open(path.join(getcwd(), 'boot_config.txt'), 'r') as file:
     line = file.read()
 
-    for placeholder, path in replacement_dict.items():
+    for placeholder, path in configuration.items():
         line =  re.sub(placeholder, path, line)
 
     with open(path.join(getcwd(), 'boot.sh'), 'w') as file:
@@ -244,10 +233,10 @@ with open(path.join(getcwd(), 'boot_config.txt'), 'r') as file:
 
 
 chmod(path.join(getcwd(), "boot.sh"), mode=0o755)
-shutil.copy(f"{getcwd()}/boot.sh", "/usr/local/bin/catropi.sh")
+shutil.copy(path.join(getcwd(), "boot.sh"), "/usr/local/bin/catropi.sh")
 chmod("/usr/local/bin/catropi.sh", mode=0o755)
 
-service_file = f"{getcwd()}/catropi.service"
+service_file = path.join(getcwd(), "catropi.service")
 destination = "/etc/systemd/system/catropi.service"
 shutil.copy(service_file, destination)
 chmod(destination, mode=0o640)
