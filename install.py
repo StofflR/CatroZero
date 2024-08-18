@@ -64,10 +64,10 @@ else:
     exit(1)
 
 if not path.exists(BLUETOOTH_PATH):
-    path.mkdir(BLUETOOTH_PATH)
+    mkdir(BLUETOOTH_PATH)
 
 if not path.exists(WIFI_PATH):
-    path.mkdir(WIFI_PATH)
+    mkdir(WIFI_PATH)
 
 hosts_entry = f"127.0.0.1\t{HOSTNAME}"
 with open("/etc/hosts", "a") as hosts_file:
