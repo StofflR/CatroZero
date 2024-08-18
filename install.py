@@ -28,7 +28,7 @@ parser.add_argument("--bluetooth-path", type=str, default=BLUETOOTH_PATH, help="
 parser.add_argument("--mount-file", type=str, default=MOUNT_FILE, help="Mount file path")
 parser.add_argument("--data-file", type=str, default=DATA_FILE, help="Data file path")
 parser.add_argument("--usb-size", type=str, default=USB_SIZE, help="USB size e.g. 8.0G or 8M")
-parser.add_argument("--venv", type=str, default=VENV_PATH, help="Path to python virtual environment")
+parser.add_argument("--venv", type=str, default=VENV_PATH, help="Path to python virtual environment bin folder e.g. .venv/bin")
 
 # Parse arguments
 args = parser.parse_args()
@@ -41,6 +41,7 @@ BLUETOOTH_PATH = args.bluetooth_path
 MOUNT_FILE = args.mount_file
 DATA_FILE = args.data_file
 USB_SIZE = args.usb_size
+PYTHON = path.join(VENV_PATH, "python3")
 
 # Print values to verify
 print(f"DELAY: {DELAY}")
@@ -125,54 +126,33 @@ else:
 
 run_command([["apt-get", "update"], 
              ["apt-get", "upgrade", "-y", "--fix-missing"], 
-             ["apt-get", "install", "samba", "screen", "python3", "python3-pip", "-y"],
+             ["apt-get", "install", "samba", "screen", "-y"],
              ["apt-get", "install", "libbluetooth3", "python3-dev", "libdbus-1-dev", "libc6", "libwrap0", "pulseaudio-module-bluetooth", "libglib2.0-dev", "libcairo2-dev", "libgirepository1.0-dev", "-y"],
              ["apt-get", "install", "libopenobex2", "obexpushd", "-y"]], "Installing dependencies")
 
-# Check if libopenobex2 is already installed
-result = subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True)
-result += subprocess.run(["dpkg", "-s", "obexpushd"], capture_output=True)
+# Check if libopenobex2 is already installed 
 
-if result.returncode == 0:
-    print("libopenobex2 is already installed")
-else:
-    print("libopenobex2 is not installed")
+if subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True).returncode != 0 or subprocess.run(["dpkg", "-s", "obexpushd"], capture_output=True).returncode != 0:
+    print("obex error!")
+
     subprocess.run(["apt-get", "install", "libopenobex2", "-y"])
-
-    # Check if libopenobex2 is already installed
-    result = subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True)
-    if result.returncode == 0:
-        print("libopenobex2 is already installed")
-    else:
-        print("libopenobex2 is not installed")
-        subprocess.run(["apt-get", "install", "libopenobex2", "-y"])
-        arch = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
-        print("Trying manual installation!")
-        subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/obexpushd_0.11.2-1.1+b1_{arch}.deb"])
-        subprocess.run(["dpkg", "-i", f"obexpushd_0.11.2-1.1+b1_{arch}.deb"])
-        remove(f"obexpushd_0.11.2-1.1+b1_{arch}.deb")
+    arch = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
+    
+    print("Trying manual installation!")
+    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/obexpushd_0.11.2-1.1+b1_{arch}.deb"])
+    subprocess.run(["dpkg", "-i", f"obexpushd_0.11.2-1.1+b1_{arch}.deb"])
+    remove(f"obexpushd_0.11.2-1.1+b1_{arch}.deb")
 
 subprocess.run(["apt-get", "install", "--fix-broken", "-y"])
+subprocess.run([PYTHON, "-m" ,"pip", "install", "watchdog", "dbus-python", "PyGObject"])
 
-python_minor_version = sys.version_info.minor
-print(f"Python minor version: {python_minor_version}")
-
-subprocess.run(["pip3", "install", "watchdog", "dbus-python", "PyGObject"])
-
-loading_thread = threading.Thread(target=display_loading_symbol, args=["Mounting USB Storage to shared folder",])
-loading_thread.start()
 
 makedirs(MOUNT_FILE, mode=0o2777)
-subprocess.run(["mount", DATA_FILE, MOUNT_FILE])
+run_command([["mount", DATA_FILE, MOUNT_FILE]], "Mounting USB Storage to shared folder")
 
-loading_thread.join()
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=["Creating network shared folder",])
-loading_thread.start()
-
+print("Creating network shared folder")
 makedirs(WIFI_PATH, mode=0o2777)
-
-loading_thread.join()
 
 samba_config = "/etc/samba/smb.conf"
 sample_config = "/etc/samba/smb.conf.sample"
@@ -193,16 +173,11 @@ with open("samba_config.txt", "r") as file:
     with open(samba_config, "a") as config_file:
         config_file.write(line)
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=["Setting Bluetooth device name",])
-loading_thread.start()
-
-
+print("Setting Bluetooth device name")
 with open(path.join(getcwd(), 'main.conf'), 'r') as file:
     file.write(file.read().replace('HOSTNAME', HOSTNAME))
 
 shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
-
-loading_thread.join()
 
 # Check if ' -C' is already present in "/etc/systemd/system/dbus-org.bluez.service"
 with open("/etc/systemd/system/dbus-org.bluez.service", "r") as file:
