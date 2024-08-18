@@ -16,8 +16,7 @@ BLUETOOTH_PATH = path.join(getcwd(), "bluetooth")
 MOUNT_FILE = "/mnt/pi_usb"
 DATA_FILE = "/pi_usb.bin"
 VENV_PATH = path.join(getcwd(), ".venv/bin")
-
-USB_SIZE = "8G"   # 8GB
+USB_SIZE = "8G"
 
 ARCH = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
 OBEX_FILE = f"obexpushd_0.11.2-4_{ARCH}.deb"
@@ -55,8 +54,17 @@ print(f"BLUETOOTH_PATH: {BLUETOOTH_PATH}")
 print(f"MOUNT_FILE: {MOUNT_FILE}")
 print(f"DATA_FILE: {DATA_FILE}")
 print(f"USB_SIZE: {USB_SIZE}")
-print(f"VENV: {VENV_PATH}")
+print(f"VENV: {VENV_PATH}")#
 
+replacement_dict = {
+    'PWD': re.sub(r'[\/&]', r'\\\g<0>', getcwd()),
+    'DEL': str(DELAY),
+    'WFILE': re.sub(r'[\/&]', r'\\\g<0>', WIFI_PATH),
+    'BLFILE': re.sub(r'[\/&]', r'\\\g<0>', BLUETOOTH_PATH),
+    'MNTFILE': re.sub(r'[\/&]', r'\\\g<0>', MOUNT_FILE),
+    'DATAFILE': re.sub(r'[\/&]', r'\\\g<0>', DATA_FILE),
+    'HOSTNAME': HOSTNAME
+}
 
 if geteuid() != 0:
     print("Please run this script as root.")
@@ -142,7 +150,7 @@ if subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True).returncod
     subprocess.run(["apt-get", "install", "libopenobex2", "-y"])
     
     print("Trying manual installation!")
-    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/ {OBEX_FILE}"])
+    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/{OBEX_FILE}"])
     subprocess.run(["dpkg", "-i", f"{OBEX_FILE}"])
     remove(f"{OBEX_FILE}")
 
@@ -222,32 +230,14 @@ with open(bluetooth_service_file, "r") as file:
 
 
 # Escape special characters in the current working directory path
-escaped_path = re.sub(r'[\/&]', r'\\\g<0>', getcwd())
+
 
 # Read the contents of the boot_config.txt file
 with open(path.join(getcwd(), 'boot_config.txt'), 'r') as file:
     line = file.read()
 
-    # Replace the placeholder PWD with the escaped current working directory path
-    line = re.sub(r'PWD', escaped_path, line)
-
-    # Replace the placeholder DEL with the delay value
-    line = re.sub(r'DEL', str(DELAY), line)
-
-    # Replace the placeholder WFILE with the escaped wifi file path
-    line = re.sub(r'WFILE', re.sub(r'[\/&]', r'\\\g<0>', WIFI_PATH), line)
-
-    # Replace the placeholder BLFILE with the escaped bluetooth file path
-    line = re.sub(r'BLFILE', re.sub(r'[\/&]', r'\\\g<0>', BLUETOOTH_PATH), line)
-
-    # Replace the placeholder MNTFILE with the escaped mount file path
-    line = re.sub(r'MNTFILE', re.sub(r'[\/&]', r'\\\g<0>', MOUNT_FILE), line)
-
-    # Replace the placeholder DATAFILE with the escaped data file path
-    line = re.sub(r'DATAFILE', re.sub(r'[\/&]', r'\\\g<0>', DATA_FILE), line)
-
-    # Replace the placeholder DATAFILE with the escaped data file path
-    line = re.sub(r'HOSTNAME', re.sub(r'[\/&]', r'\\\g<0>', HOSTNAME), line)
+    for placeholder, path in replacement_dict.items():
+        line =  re.sub(placeholder, path, line)
 
     with open(path.join(getcwd(), 'boot.sh'), 'w') as file:
         file.write(line)
