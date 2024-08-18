@@ -81,19 +81,19 @@ def display_loading_symbol(text):
         i = (i + 1) % len(symbols)
         time.sleep(0.1)
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=["Creating shared usb file"])
-loading_thread.start()
+def run_command(commands, display):
+    stop_thread = False
+    loading_thread = threading.Thread(target=display_loading_symbol, args=[display, lambda: stop_thread])
+    loading_thread.start()
+    for command in commands:
+        subprocess.run(command)
+    stop_thread = True
+    loading_thread.join()
 
-subprocess.run(["fallocate", "-l", USB_SIZE ,DATA_FILE])
+run_command([["fallocate", "-l", USB_SIZE, DATA_FILE]], "Creating shared usb file")
+run_command([["mkfs.vfat", "-F32", DATA_FILE]], "Formating shared usb file")
 
-loading_thread.join()
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=["Formating shared usb file"])
-loading_thread.start()
-
-subprocess.run(["mkfs.vfat", "-F32", DATA_FILE])
-
-loading_thread.join()
 config_file = "/boot/config.txt"
 dtoverlay_line = "dtoverlay=dwc2"
 
@@ -121,16 +121,11 @@ else:
     with open("/etc/modules", "a") as modules_file:
         modules_file.write("g_mass_storage\n")
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=["Installing dependencies",])
-loading_thread.start()
-
-subprocess.run(["apt-get", "update"])
-subprocess.run(["apt-get", "upgrade", "-y", "--fix-missing"])
-subprocess.run(["apt-get", "install", "samba", "screen", "python3", "python3-pip", "-y"])
-subprocess.run(["apt-get", "install", "libbluetooth3", "python3-dev", "libdbus-1-dev", "libc6", "libwrap0", "pulseaudio-module-bluetooth", "libglib2.0-dev", "libcairo2-dev", "libgirepository1.0-dev", "-y"])
-subprocess.run(["apt-get", "install", "libopenobex2", "obexpushd", "-y"])
-
-loading_thread.join()
+run_command([["apt-get", "update"], 
+             ["apt-get", "upgrade", "-y", "--fix-missing"], 
+             ["apt-get", "install", "samba", "screen", "python3", "python3-pip", "-y"],
+             ["apt-get", "install", "libbluetooth3", "python3-dev", "libdbus-1-dev", "libc6", "libwrap0", "pulseaudio-module-bluetooth", "libglib2.0-dev", "libcairo2-dev", "libgirepository1.0-dev", "-y"],
+             ["apt-get", "install", "libopenobex2", "obexpushd", "-y"]], "Installing dependencies")
 
 # Check if libopenobex2 is already installed
 result = subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True)
