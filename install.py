@@ -81,7 +81,7 @@ def display_loading_symbol(text):
         i = (i + 1) % len(symbols)
         time.sleep(0.1)
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=("Creating shared usb file"))
+loading_thread = threading.Thread(target=display_loading_symbol, args=["Creating shared usb file"])
 loading_thread.start()
 
 shutil.copy("/dev/zero", DATA_FILE)
@@ -90,7 +90,7 @@ with open(DATA_FILE, "wb") as file:
 
 loading_thread.join()
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=("Formating shared usb file",))
+loading_thread = threading.Thread(target=display_loading_symbol, args=["Formating shared usb file"])
 loading_thread.start()
 
 subprocess.run(["mkfs.vfat", "-F32", DATA_FILE])
@@ -123,7 +123,7 @@ else:
     with open("/etc/modules", "a") as modules_file:
         modules_file.write("g_mass_storage\n")
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=("Installing dependencies",))
+loading_thread = threading.Thread(target=display_loading_symbol, args=["Installing dependencies",])
 loading_thread.start()
 
 subprocess.run(["apt-get", "update"])
@@ -164,7 +164,7 @@ print(f"Python minor version: {python_minor_version}")
 
 subprocess.run(["pip3", "install", "watchdog", "dbus-python", "PyGObject"])
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=("Mounting USB Storage to shared folder",))
+loading_thread = threading.Thread(target=display_loading_symbol, args=["Mounting USB Storage to shared folder",])
 loading_thread.start()
 
 makedirs(MOUNT_FILE, mode=0o2777)
@@ -172,7 +172,7 @@ subprocess.run(["mount", DATA_FILE, MOUNT_FILE])
 
 loading_thread.join()
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=("Creating network shared folder",))
+loading_thread = threading.Thread(target=display_loading_symbol, args=["Creating network shared folder",])
 loading_thread.start()
 
 makedirs(WIFI_PATH, mode=0o2777)
@@ -198,7 +198,7 @@ with open("samba_config.txt", "r") as file:
     with open(samba_config, "a") as config_file:
         config_file.write(line)
 
-loading_thread = threading.Thread(target=display_loading_symbol, args=("Setting Bluetooth device name",))
+loading_thread = threading.Thread(target=display_loading_symbol, args=["Setting Bluetooth device name",])
 loading_thread.start()
 
 
