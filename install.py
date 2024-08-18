@@ -19,6 +19,10 @@ VENV_PATH = path.join(getcwd(), ".venv/bin")
 
 USB_SIZE = "8G"   # 8GB
 
+ARCH = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
+OBEX_FILE = "obexpushd_0.11.2-4_{ARCH}.deb"
+
+
 # Argument parser setup
 parser = argparse.ArgumentParser(description="Parse program arguments.")
 parser.add_argument("--delay", type=int, default=DELAY, help="Delay in seconds")
@@ -136,13 +140,11 @@ if subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True).returncod
     print("obex error!")
 
     subprocess.run(["apt-get", "install", "libopenobex2", "-y"])
-    arch = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
     
     print("Trying manual installation!")
-    obex_file = "obexpushd_0.11.2-4_{arch}.deb"
-    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/ {obex_file}"])
-    subprocess.run(["dpkg", "-i", f"{obex_file}"])
-    remove(f"{obex_file}")
+    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/ {OBEX_FILE}"])
+    subprocess.run(["dpkg", "-i", f"{OBEX_FILE}"])
+    remove(f"{OBEX_FILE}")
 
 subprocess.run(["apt-get", "install", "--fix-broken", "-y"])
 subprocess.run([PYTHON, "-m" ,"pip", "install", "watchdog", "dbus-python", "PyGObject"])
