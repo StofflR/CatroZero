@@ -17,7 +17,7 @@ MOUNT_FILE = "/mnt/pi_usb"
 DATA_FILE = "/pi_usb.bin"
 VENV_PATH = path.join(getcwd(), ".venv/bin")
 
-USB_SIZE = 8 * 1024 * 1024  # 8GB
+USB_SIZE = 8 * 1024 * 1024 * 1024   # 8GB
 
 # Argument parser setup
 parser = argparse.ArgumentParser(description="Parse program arguments.")
@@ -84,9 +84,9 @@ def display_loading_symbol(text):
 loading_thread = threading.Thread(target=display_loading_symbol, args=["Creating shared usb file"])
 loading_thread.start()
 
-shutil.copy("/dev/zero", DATA_FILE)
 with open(DATA_FILE, "wb") as file:
-    file.write(b'\x00' * USB_SIZE)
+    file.seek(USB_SIZE - 1)
+    file.write(b'\0')
 
 loading_thread.join()
 
