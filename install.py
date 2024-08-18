@@ -19,8 +19,12 @@ VENV_PATH = path.join(getcwd(), ".venv/bin")
 USB_SIZE = "8G"
 
 ARCH = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
-OBEX_FILE = f"obexpushd_0.11.2-4_{ARCH}.deb"
 
+# note on arm64 architecture, obexpushd is not always available as a package, a suitable debian pacakge needs to be provided
+# for the installation to work - therefore the following variables are used to download the package and install it
+# the .deb file and server need to be adapted once outdated
+OBEX_FILE = f"obexpushd_0.11.2-1.1build2_{ARCH}.deb"
+OBEX_SOURCE = f"http://ports.ubuntu.com/pool/universe/o/obexpushd/{OBEX_FILE}"
 
 # Argument parser setup
 parser = argparse.ArgumentParser(description="Parse program arguments.")
@@ -158,7 +162,7 @@ if subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True).returncod
     subprocess.run(["apt-get", "install", "libopenobex2", "-y"])
     
     print("Trying manual installation!")
-    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/{OBEX_FILE}"])
+    subprocess.run(["wget", OBEX_SOURCE])
     subprocess.run(["dpkg", "-i", f"{OBEX_FILE}"])
     remove(f"{OBEX_FILE}")
 
