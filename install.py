@@ -139,7 +139,7 @@ if subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True).returncod
     arch = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
     
     print("Trying manual installation!")
-    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/obexpushd_0.11.2-1.1+b1_{arch}.deb"])
+    subprocess.run(["wget", f"http://ftp.at.debian.org/debian/pool/main/o/obexpushd/ obexpushd_0.11.2-4_{arch}.deb"])
     subprocess.run(["dpkg", "-i", f"obexpushd_0.11.2-1.1+b1_{arch}.deb"])
     remove(f"obexpushd_0.11.2-1.1+b1_{arch}.deb")
 
