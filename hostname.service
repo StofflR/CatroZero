@@ -1,11 +1,11 @@
 [Unit]
-Description=CatroPi Service Script
+Description=HOSTNAME Service Script
 
 After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/catropi.sh
+ExecStart=BOOTABLE_SH
 Restart=on-failure
 RestartSec=10
 KillMode=process

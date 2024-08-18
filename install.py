@@ -79,7 +79,7 @@ configuration = {
 }
 
 LOWER_HOSTNAME = str.lower(HOSTNAME)
-SERVICE_FILE = f"{LOWER_HOSTNAME}.service"
+SERVICE = f"{LOWER_HOSTNAME}.service"
 BOOTABLE_SH = f"/usr/local/bin/{LOWER_HOSTNAME}.sh"
 
 if geteuid() != 0:
@@ -187,7 +187,7 @@ if str.lower(configuration[HOSTNAME_KEY]) not in open(samba_config).read():
         open(samba_config, "a").write(line)
 
 print("Setting Bluetooth device name")
-with open(path.join(getcwd(), 'main.conf'), 'r+') as file:
+with open(path.join(getcwd(), 'main.conf'), "w") as file:
     file.write(file.read().replace(HOSTNAME_KEY, configuration[HOSTNAME_KEY]))
 
 shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
@@ -214,24 +214,28 @@ set_compat("/lib/systemd/system/bluetooth.service", "system/bluetooth")
 # Read the contents of the boot_config.txt file
 
 boot_file = path.join(getcwd(), "boot.sh")
-with open(path.join(getcwd(), 'boot_config.txt'), 'r') as file:
+with open(path.join(getcwd(), "boot_config.txt"), "r") as file:
     line = file.read()
 
     for placeholder, path in configuration.items():
         line =  re.sub(placeholder, path, line)
-    open(boot_file, 'w').write(line)
+    open(boot_file, "w").write(line)
 
 
 chmod(boot_file, mode=0o755)
 shutil.copy(boot_file, BOOTABLE_SH)
 chmod(BOOTABLE_SH, mode=0o755)
 
-service_file = path.join(getcwd(), SERVICE_FILE)
-destination = path.join("/etc/systemd/system", SERVICE_FILE)
-shutil.copy(service_file, destination)
-chmod(destination, mode=0o640)
+hostname_service = path.join(getcwd(), "hostname.service")
+service_file = path.join("/etc/systemd/system", SERVICE)
 
-subprocess.run(["systemctl", "enable", SERVICE_FILE])
+with open(hostname_service, "r") as file:
+    line = file.read().replace(HOSTNAME_KEY, configuration[HOSTNAME_KEY])
+    line = line.replace("BOOTABLE_SH", BOOTABLE_SH)
+    open(service_file, "w").write(line)
+    chmod(service_file, mode=0o640)
+
+subprocess.run(["systemctl", "enable", SERVICE])
 subprocess.run(["bluetoothctl", "system-alias", HOSTNAME])
 subprocess.run(["hostnamectl", "set-hostname", HOSTNAME])
 subprocess.run(["hciconfig", "hci0", "class", "100100"])
