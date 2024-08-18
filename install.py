@@ -20,7 +20,7 @@ VENV_PATH = path.join(getcwd(), ".venv/bin")
 USB_SIZE = "8G"   # 8GB
 
 ARCH = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
-OBEX_FILE = "obexpushd_0.11.2-4_{ARCH}.deb"
+OBEX_FILE = f"obexpushd_0.11.2-4_{ARCH}.deb"
 
 
 # Argument parser setup
