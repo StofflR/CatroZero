@@ -252,7 +252,7 @@ with open(bluetooth_service_file, "r") as file:
 escaped_path = re.sub(r'[\/&]', r'\\\g<0>', getcwd())
 
 # Read the contents of the boot_config.txt file
-with open(file=path.join(getcwd(), 'boot_config.txt'), 'r') as file:
+with open(path.join(getcwd(), 'boot_config.txt'), 'r') as file:
     line = file.read()
 
     # Replace the placeholder PWD with the escaped current working directory path
