@@ -1,7 +1,7 @@
 #!/bin/bash
-#CatroPi Boot
+#HOSTNAME Boot
 
 cd PWD
-sh -c 'screen -dmS bl_manager -d -m /usr/bin/python3 PWD/bluetooth_agent.py; exec bash'&
-sh -c 'screen -dmS fs_check -d -m /usr/bin/python3 PWD/check_fs.py -w WFILE -b BLFILE -o MNTFILE -t DEL -u DATAFILE &> /tmp/check_fs.log; exec bash'&
+sh -c 'screen -dmS bl_manager -d -m VENV/bin/python3 PWD/bluetooth_agent.py; exec bash'&
+sh -c 'screen -dmS fs_check -d -m VENV/bin/python3 PWD/check_fs.py -w WFILE -b BLFILE -o MNTFILE -t DEL -u DATAFILE &> /tmp/check_fs.log; exec bash'&
 exit 0

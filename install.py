@@ -5,14 +5,53 @@ import threading
 import sys
 import re
 import shutil
+import argparse
+from os import getcwd, path
 
+# Default values
 DELAY = 5
-HOSTNAME:str="CatroZero"
-WIFI_PATH: str=path.join(getcwd(), "wifi")
-BLUETOOTH_PATH: str=path.join(getcwd(), "bluetooth")
-MOUNT_FILE:str="/mnt/pi_usb"
-DATA_FILE:str="/pi_usb.bin"
-USB_SIZE = 8 * 1024 * 1024 #8GB
+HOSTNAME = "CatroZero"
+WIFI_PATH = path.join(getcwd(), "wifi")
+BLUETOOTH_PATH = path.join(getcwd(), "bluetooth")
+MOUNT_FILE = "/mnt/pi_usb"
+DATA_FILE = "/pi_usb.bin"
+VENV_PATH = path.join(getcwd(), ".venv/bin")
+
+USB_SIZE = 8 * 1024 * 1024  # 8GB
+
+# Argument parser setup
+parser = argparse.ArgumentParser(description="Parse program arguments.")
+parser.add_argument("--delay", type=int, default=DELAY, help="Delay in seconds")
+parser.add_argument("--hostname", type=str, default=HOSTNAME, help="Hostname")
+parser.add_argument("--wifi-path", type=str, default=WIFI_PATH, help="WiFi path")
+parser.add_argument("--bluetooth-path", type=str, default=BLUETOOTH_PATH, help="Bluetooth path")
+parser.add_argument("--mount-file", type=str, default=MOUNT_FILE, help="Mount file path")
+parser.add_argument("--data-file", type=str, default=DATA_FILE, help="Data file path")
+parser.add_argument("--usb-size", type=int, default=USB_SIZE, help="USB size in bytes")
+parser.add_argument("--venv", type=str, default=VENV_PATH, help="Path to python virtual environment")
+
+# Parse arguments
+args = parser.parse_args()
+
+# Assign parsed values to variables
+DELAY = args.delay
+HOSTNAME = args.hostname
+WIFI_PATH = args.wifi_path
+BLUETOOTH_PATH = args.bluetooth_path
+MOUNT_FILE = args.mount_file
+DATA_FILE = args.data_file
+USB_SIZE = args.usb_size
+
+# Print values to verify
+print(f"DELAY: {DELAY}")
+print(f"HOSTNAME: {HOSTNAME}")
+print(f"WIFI_PATH: {WIFI_PATH}")
+print(f"BLUETOOTH_PATH: {BLUETOOTH_PATH}")
+print(f"MOUNT_FILE: {MOUNT_FILE}")
+print(f"DATA_FILE: {DATA_FILE}")
+print(f"USB_SIZE: {USB_SIZE}")
+print(f"VENV: {VENV_PATH}")
+
 
 if geteuid() != 0:
     print("Please run this script as root.")
@@ -141,18 +180,30 @@ makedirs(WIFI_PATH, mode=0o2777)
 loading_thread.join()
 
 samba_config = "/etc/samba/smb.conf"
+sample_config = "/etc/samba/smb.conf.sample"
+
+if not path.exists(sample_config):
+    shutil.copy(samba_config, sample_config)
+
+
 if "pi-share" in open(samba_config).read():
-    print("Already created samba config")
-else:
-    with open("samba_config.txt", "r") as file:
-        line = file.read()
-        escaped_path = WIFI_PATH.replace("/", "\\/")
-        line = line.replace("WIFIFILE", escaped_path)
-        with open(samba_config, "a") as config_file:
-            config_file.write(line)
+    print("Already created samba config - falling back to default")
+    shutil.rmtree(samba_config)
+    shutil.copy(sample_config, samba_config)
+
+with open("samba_config.txt", "r") as file:
+    line = file.read()
+    escaped_path = WIFI_PATH.replace("/", "\\/")
+    line = line.replace("WIFIFILE", escaped_path)
+    with open(samba_config, "a") as config_file:
+        config_file.write(line)
 
 loading_thread = threading.Thread(target=display_loading_symbol, args=("Setting Bluetooth device name",))
 loading_thread.start()
+
+
+with open(path.join(getcwd(), 'main.conf'), 'r') as file:
+    file.write(file.read().replace('HOSTNAME', HOSTNAME))
 
 shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
 
@@ -196,23 +247,13 @@ with open(bluetooth_service_file, "r") as file:
             file.seek(0)
             file.writelines(lines)
 
-delsym = "d"
-exitnum = len(open("/etc/rc.local").readlines())
-with open("/etc/rc.local", "r+") as file:
-    lines = file.readlines()
-    lines[exitnum-1] = lines[exitnum-1].replace(delsym, "")
-    file.seek(0)
-    file.writelines(lines)
 
-    # Get the current working directory
-    cwd = getcwd()
+# Escape special characters in the current working directory path
+escaped_path = re.sub(r'[\/&]', r'\\\g<0>', getcwd())
 
-    # Escape special characters in the current working directory path
-    escaped_path = re.sub(r'[\/&]', r'\\\g<0>', cwd)
-
-    # Read the contents of the boot_config.txt file
-    with open(file=path.join(cwd, 'boot_config.txt'), 'r') as file:
-        line = file.read()
+# Read the contents of the boot_config.txt file
+with open(file=path.join(getcwd(), 'boot_config.txt'), 'r') as file:
+    line = file.read()
 
     # Replace the placeholder PWD with the escaped current working directory path
     line = re.sub(r'PWD', escaped_path, line)
@@ -232,8 +273,12 @@ with open("/etc/rc.local", "r+") as file:
     # Replace the placeholder DATAFILE with the escaped data file path
     line = re.sub(r'DATAFILE', re.sub(r'[\/&]', r'\\\g<0>', DATA_FILE), line)
 
-with open(path.join(cwd, 'boot.sh'), 'w') as file:
-    file.write(line)
+    # Replace the placeholder DATAFILE with the escaped data file path
+    line = re.sub(r'HOSTNAME', re.sub(r'[\/&]', r'\\\g<0>', HOSTNAME), line)
+
+    with open(path.join(getcwd(), 'boot.sh'), 'w') as file:
+        file.write(line)
+
 
 chmod(path.join(getcwd(), "boot.sh"), mode=0o755)
 shutil.copy(f"{getcwd()}/boot.sh", "/usr/local/bin/catropi.sh")
