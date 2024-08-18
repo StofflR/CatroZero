@@ -4,8 +4,8 @@ delay=5
 hostname="CatroZero"
 wififile=$PWD"/wifi"
 blfile=$PWD"/bluetooth"
-mountfile="/mnt/pi_usb"
-datafile="/pi_usb.bin"
+mountfile="/mnt/piusb"
+datafile="/piusb.bin"
 
 if [ "$USER" != "root" ]
 then

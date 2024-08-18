@@ -8,7 +8,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 import filecmp
 
-USB_PATH = "/mnt/pi_usb"
+USB_PATH = "/mnt/piusb"
 WIFI_PATH = os.getcwd()+"/wifi"
 DATA_LOCATION = "/piusb.bin"
 MOUNT = "sudo mount "+DATA_LOCATION+" "+USB_PATH
