@@ -78,6 +78,10 @@ configuration = {
     HOSTNAME_KEY: HOSTNAME
 }
 
+LOWER_HOSTNAME = str.lower(HOSTNAME)
+SERVICE_FILE = f"{LOWER_HOSTNAME}.service"
+BOOTABLE_SH = f"/usr/local/bin/{LOWER_HOSTNAME}.sh"
+
 if geteuid() != 0:
     print("Please run this script as root.")
     exit(1)
@@ -88,11 +92,9 @@ else:
     print("Python is not running in a virtual environment.")
     exit(1)
 
-if not path.exists(BLUETOOTH_PATH):
-    mkdir(BLUETOOTH_PATH)
-
-if not path.exists(WIFI_PATH):
-    mkdir(WIFI_PATH)
+mkdir(BLUETOOTH_PATH) if not path.exists(BLUETOOTH_PATH) else print("Bluetooth path already exists")
+mkdir(WIFI_PATH) if not path.exists(WIFI_PATH) else print("WiFi path already exists")
+    
 
 hosts_entry = f"127.0.0.1\t{HOSTNAME}"
 with open("/etc/hosts", "a") as hosts_file:
@@ -125,28 +127,13 @@ config_file = "/boot/config.txt"
 dtoverlay_line = "dtoverlay=dwc2"
 
 # Check if "dtoverlay=dwc2" is already enabled in /boot/config.txt
-if dtoverlay_line in open(config_file).read():
-    print("Already enabled dwc2")
-else:
-    # Append "dtoverlay=dwc2" to /boot/config.txt
-    with open(config_file, "a") as file:
-        file.write(dtoverlay_line + "\n")
+print("Already enabled dwc2") if dtoverlay_line in open(config_file).read() else open(config_file, "a").write(dtoverlay_line + "\n")
 
 # Check if "dwc2" is already enabled in /etc/modules
-if "dwc2" in open("/etc/modules").read():
-    print("Already enabled dwc2")
-else:
-    # Append "dwc2" to /etc/modules
-    with open("/etc/modules", "a") as modules_file:
-        modules_file.write("dwc2\n")
+print("Already enabled dwc2") if "dwc2" in open("/etc/modules").read() else open("/etc/modules", "a").write("dwc2\n")
 
 # Check if "g_mass_storage" is already enabled in /etc/modules
-if "g_mass_storage" in open("/etc/modules").read():
-    print("Already enabled g_mass_storage")
-else:
-    # Append "g_mass_storage" to /etc/modules
-    with open("/etc/modules", "a") as modules_file:
-        modules_file.write("g_mass_storage\n")
+print("Already enabled g_mass_storage") if "g_mass_storage" in open("/etc/modules").read() else open("/etc/modules", "a").write("g_mass_storage\n")
 
 run_command([["apt-get", "update"], 
              ["apt-get", "upgrade", "-y", "--fix-missing"], 
@@ -197,8 +184,7 @@ if str.lower(configuration[HOSTNAME_KEY]) not in open(samba_config).read():
     with open("samba_config.txt", "r") as file:
         line = file.read().replace(WFILE_KEY, configuration[WFILE_KEY])
         line = line.replace(HOSTNAME_KEY, str.lower(configuration[HOSTNAME_KEY]))
-        with open(samba_config, "a") as config_file:
-            config_file.write(line)
+        open(samba_config, "a").write(line)
 
 print("Setting Bluetooth device name")
 with open(path.join(getcwd(), 'main.conf'), 'r+') as file:
@@ -226,26 +212,26 @@ set_compat("/lib/systemd/system/bluetooth.service", "system/bluetooth")
 
 
 # Read the contents of the boot_config.txt file
+
+boot_file = path.join(getcwd(), "boot.sh")
 with open(path.join(getcwd(), 'boot_config.txt'), 'r') as file:
     line = file.read()
 
     for placeholder, path in configuration.items():
         line =  re.sub(placeholder, path, line)
-
-    with open(path.join(getcwd(), 'boot.sh'), 'w') as file:
-        file.write(line)
+    open(boot_file, 'w').write(line)
 
 
-chmod(path.join(getcwd(), "boot.sh"), mode=0o755)
-shutil.copy(path.join(getcwd(), "boot.sh"), "/usr/local/bin/catropi.sh")
-chmod("/usr/local/bin/catropi.sh", mode=0o755)
+chmod(boot_file, mode=0o755)
+shutil.copy(boot_file, BOOTABLE_SH)
+chmod(BOOTABLE_SH, mode=0o755)
 
-service_file = path.join(getcwd(), "catropi.service")
-destination = "/etc/systemd/system/catropi.service"
+service_file = path.join(getcwd(), SERVICE_FILE)
+destination = path.join("/etc/systemd/system", SERVICE_FILE)
 shutil.copy(service_file, destination)
 chmod(destination, mode=0o640)
 
-subprocess.run(["systemctl", "enable", "catropi.service"])
+subprocess.run(["systemctl", "enable", SERVICE_FILE])
 subprocess.run(["bluetoothctl", "system-alias", HOSTNAME])
 subprocess.run(["hostnamectl", "set-hostname", HOSTNAME])
 subprocess.run(["hciconfig", "hci0", "class", "100100"])
