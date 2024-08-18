@@ -135,9 +135,7 @@ print("Already enabled dwc2") if "dwc2" in open("/etc/modules").read() else open
 # Check if "g_mass_storage" is already enabled in /etc/modules
 print("Already enabled g_mass_storage") if "g_mass_storage" in open("/etc/modules").read() else open("/etc/modules", "a").write("g_mass_storage\n")
 
-run_command([["apt-get", "update"], 
-             ["apt-get", "upgrade", "-y", "--fix-missing"], 
-             ["apt-get", "install", "samba", "screen", "-y"],
+run_command([["apt-get", "install", "samba", "screen", "-y"],
              ["apt-get", "install", "libbluetooth3", "python3-dev", "libdbus-1-dev", "libc6", "libwrap0", "pulseaudio-module-bluetooth", "libglib2.0-dev", "libcairo2-dev", "libgirepository1.0-dev", "-y"],
              ["apt-get", "install", "libopenobex2", "obexpushd", "-y"]], "Installing dependencies")
 
@@ -187,10 +185,10 @@ if str.lower(configuration[HOSTNAME_KEY]) not in open(samba_config).read():
         open(samba_config, "a").write(line)
 
 print("Setting Bluetooth device name")
-with open(path.join(getcwd(), 'main.conf'), "w") as file:
+with open(path.join(getcwd(), 'main.conf'), "w+") as file:
     file.write(file.read().replace(HOSTNAME_KEY, configuration[HOSTNAME_KEY]))
 
-shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
+shutil.copy(path.join(getcwd(), "main.conf"), "/etc/bluetooth/main.conf")
 
 def set_compat(path, target):
     with open(path, "r") as file:
