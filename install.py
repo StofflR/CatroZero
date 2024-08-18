@@ -58,7 +58,7 @@ print(f"BLUETOOTH_PATH: {BLUETOOTH_PATH}")
 print(f"MOUNT_FILE: {MOUNT_FILE}")
 print(f"DATA_FILE: {DATA_FILE}")
 print(f"USB_SIZE: {USB_SIZE}")
-print(f"VENV: {VENV_PATH}")#
+print(f"VENV: {VENV_PATH}")
 
 PWD_KEY = "PWD"
 DEL_KEY = "DEL"
@@ -69,12 +69,12 @@ DATAFILE_KEY = "DATAFILE"
 HOSTNAME_KEY = "HOSTNAME"
 
 configuration = {
-    PWD_KEY: re.sub(r'[\/&]', r'\\\g<0>', getcwd()),
+    PWD_KEY: getcwd(),
     DEL_KEY: str(DELAY),
-    WFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', WIFI_PATH),
-    BLFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', BLUETOOTH_PATH),
-    MNTFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', MOUNT_FILE),
-    DATAFILE_KEY: re.sub(r'[\/&]', r'\\\g<0>', DATA_FILE),
+    WFILE_KEY: WIFI_PATH,
+    BLFILE_KEY: BLUETOOTH_PATH,
+    MNTFILE_KEY:  MOUNT_FILE,
+    DATAFILE_KEY:  DATA_FILE,
     HOSTNAME_KEY: HOSTNAME
 }
 
