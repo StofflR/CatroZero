@@ -197,7 +197,7 @@ if str.lower(configuration[HOSTNAME_KEY]) not in open(samba_config).read():
             config_file.write(line)
 
 print("Setting Bluetooth device name")
-with open(path.join(getcwd(), 'main.conf'), 'r') as file:
+with open(path.join(getcwd(), 'main.conf'), 'r+') as file:
     file.write(file.read().replace(HOSTNAME_KEY, configuration[HOSTNAME_KEY]))
 
 shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
