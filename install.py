@@ -73,12 +73,14 @@ hosts_entry = f"127.0.0.1\t{HOSTNAME}"
 with open("/etc/hosts", "a") as hosts_file:
     hosts_file.write(hosts_entry + "\n")
 
-def display_loading_symbol(text):
+def display_loading_symbol(text, stop):
     symbols = ['-', '\\', '|', '/']
     i = 0
     while True:
         print(f"{text} ... {symbols[i]}", end='\r')
         i = (i + 1) % len(symbols)
+        if stop():
+            return
         time.sleep(0.1)
 
 def run_command(commands, display):
