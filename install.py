@@ -17,7 +17,7 @@ MOUNT_FILE = "/mnt/pi_usb"
 DATA_FILE = "/pi_usb.bin"
 VENV_PATH = path.join(getcwd(), ".venv/bin")
 
-USB_SIZE = 8 * 1024 * 1024 * 1024   # 8GB
+USB_SIZE = "8G"   # 8GB
 
 # Argument parser setup
 parser = argparse.ArgumentParser(description="Parse program arguments.")
@@ -27,7 +27,7 @@ parser.add_argument("--wifi-path", type=str, default=WIFI_PATH, help="WiFi path"
 parser.add_argument("--bluetooth-path", type=str, default=BLUETOOTH_PATH, help="Bluetooth path")
 parser.add_argument("--mount-file", type=str, default=MOUNT_FILE, help="Mount file path")
 parser.add_argument("--data-file", type=str, default=DATA_FILE, help="Data file path")
-parser.add_argument("--usb-size", type=int, default=USB_SIZE, help="USB size in bytes")
+parser.add_argument("--usb-size", type=str, default=USB_SIZE, help="USB size e.g. 8.0G or 8M")
 parser.add_argument("--venv", type=str, default=VENV_PATH, help="Path to python virtual environment")
 
 # Parse arguments
@@ -84,9 +84,7 @@ def display_loading_symbol(text):
 loading_thread = threading.Thread(target=display_loading_symbol, args=["Creating shared usb file"])
 loading_thread.start()
 
-with open(DATA_FILE, "wb") as file:
-    file.seek(USB_SIZE - 1)
-    file.write(b'\0')
+subprocess.run(["fallocate", "-l", USB_SIZE ,DATA_FILE])
 
 loading_thread.join()
 
