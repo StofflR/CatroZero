@@ -206,13 +206,13 @@ with open(path.join(getcwd(), 'main.conf'), 'r+') as file:
 
 shutil.copy(f"{getcwd()}/main.conf", "/etc/bluetooth/main.conf")
 
-def set_compat(file, target):
-    with open(file, "r") as file:
+def set_compat(path, target):
+    with open(path, "r") as file:
         if ' -C' in file.read():
             print("Already in compat mode")
         else:
             print(f"Set {target} to compat mode")
-            with open(file, "r+") as file:
+            with open(path, "r+") as file:
                 lines = file.readlines()
                 execnum = next(i for i, line in enumerate(lines) if "ExecStart" in line)
                 lines[execnum] = lines[execnum].strip() + " -C\n"
