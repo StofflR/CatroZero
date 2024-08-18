@@ -14,7 +14,7 @@ HOSTNAME = "CatroZero"
 WIFI_PATH = path.join(getcwd(), "wifi")
 BLUETOOTH_PATH = path.join(getcwd(), "bluetooth")
 MOUNT_FILE = "/mnt/pi_usb"
-DATA_FILE = "/pi_usb.bin"
+DATA_FILE = "/piusb.bin"
 VENV_PATH = path.join(getcwd(), ".venv/bin")
 USB_SIZE = "8G"
 
