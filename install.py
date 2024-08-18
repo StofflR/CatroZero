@@ -166,7 +166,7 @@ subprocess.run(["apt-get", "install", "--fix-broken", "-y"])
 subprocess.run([PYTHON, "-m" ,"pip", "install", "watchdog", "dbus-python", "PyGObject"])
 
 
-makedirs(MOUNT_FILE, mode=0o2777)
+makedirs(MOUNT_FILE, mode=0o2777, exist_ok=True)
 run_command([["mount", DATA_FILE, MOUNT_FILE]], "Mounting USB Storage to shared folder")
 
 
