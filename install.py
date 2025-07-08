@@ -120,7 +120,17 @@ config_file = "/boot/config.txt" if not path.exists("/boot/firmware/config.txt")
 dtoverlay_line = "dtoverlay=dwc2"
 
 # Check if "dtoverlay=dwc2" is already enabled in /boot/config.txt
-print("Already enabled dwc2 config") if dtoverlay_line in open(config_file).read() else open(config_file, "a").write(dtoverlay_line + "\n")
+
+dwc2_enabled = False
+with open(config_file, "r") as file:
+    all_section = False
+    for line in file:
+        all_section = all_section or line.strip() == "[all]"
+        if all_section and dtoverlay_line in line:
+            dwc2_enabled = True
+            break
+
+print("Already enabled dwc2 config") if dwc2_enabled else open(config_file, "a").write(dtoverlay_line + "\n")
 
 # Check if "dwc2" is already enabled in /etc/modules
 print("Already enabled dwc2 module") if "dwc2" in open("/etc/modules").read() else open("/etc/modules", "a").write("dwc2\n")
