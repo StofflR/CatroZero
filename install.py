@@ -15,7 +15,6 @@ WIFI_PATH = path.join(getcwd(), "wifi")
 BLUETOOTH_PATH = path.join(getcwd(), "bluetooth")
 MOUNT_FILE = "/mnt/piusb"
 DATA_FILE = "/piusb.bin"
-VENV_PATH = path.join(getcwd(), ".venv/bin")
 USB_SIZE = "8G"
 
 ARCH = subprocess.run(["dpkg", "--print-architecture"], capture_output=True, text=True).stdout.strip()
@@ -35,7 +34,6 @@ parser.add_argument("--bluetooth-path", type=str, default=BLUETOOTH_PATH, help="
 parser.add_argument("--mount-file", type=str, default=MOUNT_FILE, help="Mount file path")
 parser.add_argument("--data-file", type=str, default=DATA_FILE, help="Data file path")
 parser.add_argument("--usb-size", type=str, default=USB_SIZE, help="USB size e.g. 8.0G or 8M")
-parser.add_argument("--venv", type=str, default=VENV_PATH, help="Path to python virtual environment bin folder e.g. .venv/bin")
 
 # Parse arguments
 args = parser.parse_args()
@@ -48,8 +46,7 @@ BLUETOOTH_PATH = args.bluetooth_path
 MOUNT_FILE = args.mount_file
 DATA_FILE = args.data_file
 USB_SIZE = args.usb_size
-VENV_PATH = args.venv
-PYTHON = path.join(VENV_PATH, "python")
+PYTHON = "python3"
 
 # Print values to verify
 print(f"DELAY: {DELAY}")
@@ -59,7 +56,6 @@ print(f"BLUETOOTH_PATH: {BLUETOOTH_PATH}")
 print(f"MOUNT_FILE: {MOUNT_FILE}")
 print(f"DATA_FILE: {DATA_FILE}")
 print(f"USB_SIZE: {USB_SIZE}")
-print(f"VENV: {VENV_PATH}")
 
 PWD_KEY = "PWD"
 DEL_KEY = "DEL"
@@ -68,7 +64,6 @@ BLFILE_KEY = "BLFILE"
 MNTFILE_KEY = "MNTFILE"
 DATAFILE_KEY = "DATAFILE"
 HOSTNAME_KEY = "HOSTNAME"
-VENV_KEY = "VENV"
 PYTHON_KEY = "PYTHON"
 
 configuration = {
@@ -79,7 +74,6 @@ configuration = {
     MNTFILE_KEY:  MOUNT_FILE,
     DATAFILE_KEY:  DATA_FILE,
     HOSTNAME_KEY: HOSTNAME,
-    VENV_KEY: VENV_PATH,
     PYTHON_KEY: PYTHON
 }
 
@@ -89,12 +83,6 @@ BOOTABLE_SH = f"/usr/local/bin/{LOWER_HOSTNAME}.sh"
 
 if geteuid() != 0:
     print("Please run this script as root.")
-    exit(1)
-
-if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
-    print("Python is running in a virtual environment.")
-else:
-    print("Python is not running in a virtual environment.")
     exit(1)
 
 mkdir(BLUETOOTH_PATH) if not path.exists(BLUETOOTH_PATH) else print("Bluetooth path already exists")
@@ -157,8 +145,7 @@ if subprocess.run(["dpkg", "-s", "libopenobex2"], capture_output=True).returncod
     remove(f"{OBEX_FILE}")
 
 subprocess.run(["apt-get", "install", "--fix-broken", "-y"])
-subprocess.run([PYTHON, "-m" ,"pip", "install", "watchdog", "dbus-python", "PyGObject"])
-
+run_command([["apt-get", "install", "python3-watchdog", "python3-dbus", "python3-gi", "python3-gi-cairo", "-y"]], "Installing python dependencies")
 
 makedirs(MOUNT_FILE, mode=0o2777, exist_ok=True)
 run_command([["mount", DATA_FILE, MOUNT_FILE]], "Mounting USB Storage to shared folder")
